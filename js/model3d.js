@@ -10,7 +10,7 @@
     const M = { frame: L(C.PILLAR[opt.pillar || 'black'].hex), shelf: L(C.SHELF[opt.shelf || 'oak'].hex), rod: L(0x9b9b9b), handle: L(0x6a6a6a), gap: L(0x55555a),
       mirror: new T.MeshPhongMaterial({ color: 0xc6d7e0, shininess: 120, specular: 0xffffff }) };
     const H = 2.0, D = C.DEPTH / 1000, P = 0.03, t = 0.02, RT = 0.018, BP = 0.08;
-    const RUNG = [0.10, 0.62, 1.05, 1.92], RUNG5 = [0.10, 0.555, 1.01, 1.465, 1.92];
+    const RUNG = [0.10, 0.62, 1.05, 1.92], RUNG5 = [0.10, 0.62, 1.05, 1.485, 1.92];
     const sY = (i, r = RUNG) => r[i] + RT / 2 + t / 2;
     const bx = (g, w, h, d, x, y, z, m) => { const b = new T.Mesh(new T.BoxGeometry(w, h, d), m); b.position.set(x, y, z); g.add(b); return b; };
     const rodX = (g, len, y) => { const r = new T.Mesh(new T.CylinderGeometry(0.013, 0.013, len, 14), M.rod); r.rotation.z = Math.PI / 2; r.position.set(0, y, 0); g.add(r); };
