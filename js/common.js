@@ -54,7 +54,7 @@
   }
 
   // 정면도(앞에서 본 그림) SVG: 뒷벽(첫 줄) 모듈을 왼쪽부터 그립니다
-  const RUNG = [100, 620, 1050, 1920], RUNG5 = [100, 555, 1010, 1465, 1920];
+  const RUNG = [100, 620, 1050, 1920], RUNG5 = [100, 620, 1050, 1485, 1920];
   const SHELVES = { hang2: [0, 2, 3], hang1: [0, 1, 3], hangShelf: [0, 1, 2, 3], drawer3: [0, 3], shelf5: [0, 1, 2, 3, 4], mirror: [0, 1, 2, 3, 4], corner: [0, 1, 3] };
   function elevation(items, pillar = 'black', shelf = 'oak', opts = {}) {
     if (!items || !items.length) return '';
