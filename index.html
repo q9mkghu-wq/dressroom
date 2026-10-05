@@ -7,18 +7,27 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/shop.css">
 <script src="/js/catalog.js"></script><script src="/js/shop-config.js"></script><script src="/js/common.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+<script src="/js/model3d.js" defer></script>
 <title>드레스룸 스토어 | 내 방에 맞춰 배치하고 주문하는 철제 드레스룸</title>
 <meta name="description" content="방 치수를 넣고 모듈을 직접 배치해 보세요. 배치한 그대로 장바구니에 담아 주문할 수 있어요.">
 <style>
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:36px;align-items:center;padding:54px 0 48px}
 .hero .elev{height:300px;background:var(--card);border:1px solid var(--rule);border-bottom:6px solid var(--grid)}
+.hero3d{position:relative;height:380px;background:var(--card);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.hero3d .stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:16px}
+.hero3d .stage svg{height:100%;width:auto}
+.hero3d .cap{position:absolute;left:12px;bottom:10px;font-size:12.5px;color:var(--ink2);background:var(--card);padding:2px 8px;border-radius:10px;border:1px solid var(--rule)}
+.hero3d .sw{position:absolute;right:10px;top:10px;display:flex;gap:5px}
+.hero3d .sw button{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer;padding:0}
+.hero3d .sw button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--accent)}
 .hero-cta{display:flex;flex-wrap:wrap;gap:10px}
 .facts{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-size:13.5px;color:var(--ink2)}
 .facts b{color:var(--ink);font-weight:600}
 .mod-card .elev{height:130px}
 .mod-w{display:flex;flex-wrap:wrap;gap:6px}
 .mod-w span{font-size:13px;border:1px solid var(--rule);border-radius:4px;padding:2px 8px}
-@media (max-width:860px){.hero{grid-template-columns:1fr;padding:32px 0}.hero .elev{height:220px}}
+@media (max-width:860px){.hero{grid-template-columns:1fr;padding:32px 0}.hero .elev{height:220px}.hero3d{height:300px}}
 </style>
 </head>
 <body>
@@ -32,7 +41,9 @@
         <div class="hero-cta"><a class="btn primary big" href="/planner">배치 플래너 시작하기</a><a class="btn big" href="#sets">추천 세트 보기</a></div>
         <div class="facts"><span>모듈 깊이 <b>40cm</b></span><span>폭 <b>40 · 80 · 100 · 120cm</b></span><span>프레임 <b>블랙 · 화이트</b></span><span>선반 <b>4가지 색</b></span></div>
       </div>
-      <div class="elev" id="heroElev"></div>
+      <div class="hero3d"><div class="stage" id="heroElev"></div>
+        <div class="sw" role="group" aria-label="선반 색상 미리보기" id="heroSw"></div>
+        <span class="cap" id="heroCap">끌어서 돌려 보세요</span></div>
     </section>
   </div>
 
@@ -72,7 +83,18 @@
   Shop.mount('index');
   const st = await Shop.loadSettings();
   const sample = st.sets.find(s => s.k === 'SET M') || st.sets[0];
-  document.getElementById('heroElev').innerHTML = Shop.elevation(sample.items, 'black', 'oak', { label: sample.k + ' 정면도' });
+  const heroEl = document.getElementById('heroElev');
+  heroEl.innerHTML = Shop.elevation(sample.items, 'black', 'oak', { label: sample.k + ' 정면도' });
+  const start3d = () => {
+    const v = window.DRModel3D && DRModel3D.mount(heroEl, sample.items, { pillar: 'black', shelf: 'oak' });
+    if (!v) { document.getElementById('heroCap').textContent = sample.k + ' 정면도'; return; }
+    heroEl.style.padding = '0'; heroEl.setAttribute('role', 'img'); heroEl.setAttribute('aria-label', sample.k + ' 3D 모델, 끌어서 돌려 볼 수 있어요');
+    document.getElementById('heroCap').textContent = sample.k + ' · 끌어서 돌려 보세요';
+    const sw = document.getElementById('heroSw'); let cur = 'oak';
+    sw.innerHTML = Object.entries(C.SHELF).map(([k, s]) => `<button style="background:${s.hex}" aria-label="선반 ${s.name}" aria-pressed="${k === cur}" data-s="${k}"></button>`).join('');
+    sw.onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; cur = b.dataset.s; v.setColors('black', cur); sw.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
+  };
+  if (window.THREE && window.DRModel3D) start3d(); else window.addEventListener('load', start3d, { once: true });
 
   const groups = [...new Set(st.sets.map(s => s.g))];
   let cur = groups[0];
