@@ -24,7 +24,16 @@
 .hero-cta{display:flex;flex-wrap:wrap;gap:10px}
 .facts{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-size:13.5px;color:var(--ink2)}
 .facts b{color:var(--ink);font-weight:600}
-.mod-card .elev{height:130px}
+.shot{position:relative;aspect-ratio:56/34;display:flex;align-items:flex-end;justify-content:center;background:var(--sheet);border-radius:6px;padding:10px;overflow:hidden}
+.shot svg{height:100%;width:auto;max-width:100%}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.shot .elev-more{position:absolute;top:8px;right:10px;z-index:1}
+.grp{margin-top:30px}
+.grp:first-child{margin-top:0}
+.grp-h{display:flex;align-items:baseline;gap:10px;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+.grp-h h3{font-size:18px}
+.jump{display:flex;flex-wrap:wrap;gap:6px}
+.jump a{font-size:13.5px;padding:5px 12px;border:1px solid var(--rule);border-radius:20px;background:var(--card);text-decoration:none}
 .mod-w{display:flex;flex-wrap:wrap;gap:6px}
 .mod-w span{font-size:13px;border:1px solid var(--rule);border-radius:4px;padding:2px 8px}
 @media (max-width:860px){.hero{grid-template-columns:1fr;padding:32px 0}.hero .elev{height:220px}.hero3d{height:300px}}
@@ -51,9 +60,9 @@
     <div class="wrap">
       <div class="sec-h">
         <div><h2>방 크기별 추천 세트</h2><p class="muted" style="margin:0">벽 길이에 맞는 세트를 고르고, 플래너에서 내 방에 맞게 고쳐서 주문할 수도 있어요.</p></div>
-        <div class="chips" id="groupChips" role="group" aria-label="세트 분류"></div>
+        <nav class="jump" id="groupJump" aria-label="세트 분류로 이동"></nav>
       </div>
-      <div class="grid" id="setGrid"></div>
+      <div id="setGroups"></div>
     </div>
   </section>
 
@@ -96,36 +105,54 @@
   };
   if (window.THREE && window.DRModel3D) start3d(); else window.addEventListener('load', start3d, { once: true });
 
+  // 추천 세트: 분류별로 모두 한 번에 보여줍니다
   const groups = [...new Set(st.sets.map(s => s.g))];
-  let cur = groups[0];
-  const chips = document.getElementById('groupChips');
-  function renderSets() {
-    chips.innerHTML = groups.map(g => `<button class="chip" aria-pressed="${g === cur}" data-g="${esc(g)}">${esc(g)}</button>`).join('');
-    document.getElementById('setGrid').innerHTML = st.sets.map((s, i) => s.g !== cur ? '' : `
+  const gid = g => 'g-' + groups.indexOf(g);
+  document.getElementById('groupJump').innerHTML = groups.map(g => `<a href="#${gid(g)}">${esc(g)}</a>`).join('');
+  document.getElementById('setGroups').innerHTML = groups.map(g => {
+    const list = st.sets.map((s, i) => [s, i]).filter(([s]) => s.g === g);
+    return `<section class="grp" id="${gid(g)}" aria-labelledby="${gid(g)}-h"><div class="grp-h"><h3 id="${gid(g)}-h">${esc(g)}</h3><span class="muted">${list.length}개 세트</span></div>
+      <div class="grid">${list.map(([s, i]) => `
       <article class="card">
-        <div class="elev">${Shop.elevation(s.items, 'black', 'oak', { label: s.k + ' 정면도' })}</div>
+        <div class="shot" data-snap="set" data-i="${i}">${Shop.elevation(s.items, 'black', 'oak', { label: s.k + ' 정면도' })}</div>
         <div class="row"><h3>${esc(s.k)}</h3><span class="muted">${Shop.setSizeText(s)}</span></div>
         <p class="mods">${Shop.countItems(s.items).map(it => esc(C.itemName(it.t, it.w)) + (it.n > 1 ? ' × ' + it.n : '')).join(' + ')}</p>
         <div class="row" style="margin-top:auto"><span class="price">${won(Shop.setTotal(s))}</span>
           <span style="display:flex;gap:6px"><a class="btn sm" href="/planner?set=${encodeURIComponent(s.k)}">플래너에서 열기</a><button class="btn sm primary" data-add="${i}">담기</button></span></div>
-      </article>`).join('');
-  }
-  chips.addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; cur = b.dataset.g; renderSets(); });
-  document.getElementById('setGrid').addEventListener('click', e => {
+      </article>`).join('')}</div></section>`;
+  }).join('');
+  document.getElementById('setGroups').addEventListener('click', e => {
     const b = e.target.closest('[data-add]'); if (!b) return;
     const s = st.sets[+b.dataset.add]; Shop.cart.add(Shop.setToLine(s));
     Shop.toast(`${s.k}를 장바구니에 담았어요. 색상은 장바구니에서 바꿀 수 있어요.`);
   });
-  renderSets();
 
-  const mods = [];
-  Object.entries(C.TYPES).forEach(([t, d]) => mods.push({ t, d }));
-  document.getElementById('modGrid').innerHTML = mods.map(({ t, d }) => {
+  // 모듈 구성
+  document.getElementById('modGrid').innerHTML = Object.entries(C.TYPES).map(([t, d]) => {
     const w0 = d.widths[d.widths.length - 1];
-    return `<article class="card mod-card"><div class="elev">${Shop.elevation([{ t, w: w0, r: 0, x: 0, y: 0 }], 'black', 'oak', { label: d.name + ' 정면도' })}</div>
+    return `<article class="card"><div class="shot" data-snap="mod" data-t="${t}" data-w="${w0}">${Shop.elevation([{ t, w: w0, r: 0, x: 0, y: 0 }], 'black', 'oak', { label: d.name + ' 정면도' })}</div>
       <h3>${esc(d.name)}</h3><p class="mods">${esc(d.desc)}</p>
       <div class="mod-w">${d.widths.map(w => `<span>${t === 'corner' ? '60×60cm' : w / 10 + 'cm'} · ${won(Shop.price(t, w))}</span>`).join('')}</div></article>`;
   }).join('');
+
+  // 정면도 그림을 3D 정지 이미지로 하나씩 바꿉니다 (화면이 멈추지 않도록 나눠서 처리)
+  function make3dImages() {
+    if (!window.DRModel3D) return;
+    const queue = [...document.querySelectorAll('[data-snap]')];
+    const next = () => {
+      const el = queue.shift(); if (!el) return;
+      let items, label;
+      if (el.dataset.snap === 'set') { const s = st.sets[+el.dataset.i]; items = s.items; label = s.k; }
+      else { items = [{ t: el.dataset.t, w: Number(el.dataset.w), r: 0, x: 0, y: 0 }]; label = C.TYPES[el.dataset.t].name; }
+      // 코너장·L자 세트는 안쪽이 보이도록 오른쪽 앞에서 바라봅니다
+      const angle = el.dataset.t === 'corner' ? 0.75 : items.some(m => m.r === 270) ? 0.55 : -0.5;
+      const url = DRModel3D.snapshot(items, { pillar: 'black', shelf: 'oak', width: 560, height: 340, angle });
+      if (url) el.innerHTML = `<img alt="${esc(label)} 3D 이미지" src="${url}">`;
+      (window.requestIdleCallback || (f => setTimeout(f, 16)))(next);
+    };
+    next();
+  }
+  if (window.THREE && window.DRModel3D) make3dImages(); else window.addEventListener('load', make3dImages, { once: true });
 })();
 </script>
 </body>
