@@ -1,15 +1,9 @@
-/* 세트를 3D로 보여주는 작은 뷰어 (플래너와 같은 모듈 구조) */
+/* 세트를 3D로 보여주는 뷰어: mount()는 돌려 보는 화면, snapshot()은 정지 이미지 */
 (function () {
   const C = window.DR_CATALOG;
-  function mount(el, items, opt = {}) {
-    if (!window.THREE || !items || !items.length) return null;
+  function build(items, opt = {}) {
     const T = window.THREE;
-    let R;
-    try { R = new T.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return null; }
-    R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    R.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;cursor:grab';
-    el.innerHTML = ''; el.appendChild(R.domElement);
-    const scene = new T.Scene(), cam = new T.PerspectiveCamera(32, 1, 0.05, 100);
+    const scene = new T.Scene();
     scene.add(new T.HemisphereLight(0xffffff, 0x8d8a82, 0.9));
     const sun = new T.DirectionalLight(0xffffff, 0.55); sun.position.set(3, 6, 5); scene.add(sun);
     const L = c => new T.MeshLambertMaterial({ color: c });
@@ -69,11 +63,36 @@
     });
     const box = new T.Box3().setFromObject(root), ctr = box.getCenter(new T.Vector3()), size = box.getSize(new T.Vector3());
     root.position.set(-ctr.x, 0, -ctr.z);
-    const floor = new T.Mesh(new T.CircleGeometry(Math.max(size.x, size.z) * 0.85 + 0.6, 48), new T.MeshLambertMaterial({ color: 0xE4E1DA }));
-    floor.rotation.x = -Math.PI / 2; floor.position.y = -0.001; scene.add(floor);
-    const target = new T.Vector3(0, 0.95, 0);
-    let th = opt.angle ?? -0.45, ph = 0.18, r = Math.max(size.x, 2.2) * 1.55 + 1.2, drag = null, idle = true, lastMove = 0;
-    const place = () => { cam.position.set(target.x + r * Math.sin(th) * Math.cos(ph), target.y + r * Math.sin(ph), target.z + r * Math.cos(th) * Math.cos(ph)); cam.lookAt(target); };
+    if (opt.floor !== false) {
+      const floor = new T.Mesh(new T.CircleGeometry(Math.max(size.x, size.z) * 0.85 + 0.6, 48), new T.MeshLambertMaterial({ color: 0xE4E1DA }));
+      floor.rotation.x = -Math.PI / 2; floor.position.y = -0.001; scene.add(floor);
+    }
+    const radius = Math.sqrt(size.x * size.x + size.y * size.y + size.z * size.z) / 2;
+    const dispose = () => scene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    return { scene, M, size, radius, target: new T.Vector3(0, size.y / 2, 0), dispose };
+  }
+  // 화면에 꽉 차도록 카메라 거리 계산
+  function fit(cam, built, th, ph, margin = 1.08) {
+    const v = cam.fov * Math.PI / 360, h = Math.atan(Math.tan(v) * cam.aspect), sz = built.size;
+    const ct = Math.abs(Math.cos(th)), st = Math.abs(Math.sin(th));
+    const across = sz.x * ct + sz.z * st, deep = sz.x * st + sz.z * ct;
+    const tall = sz.y * Math.cos(ph) + deep * Math.sin(ph);
+    const r = Math.max(tall / 2 / Math.tan(v), across / 2 / Math.tan(h)) * margin + deep / 2, t = built.target;
+    cam.position.set(t.x + r * Math.sin(th) * Math.cos(ph), t.y + r * Math.sin(ph), t.z + r * Math.cos(th) * Math.cos(ph));
+    cam.lookAt(t);
+    return r;
+  }
+
+  function mount(el, items, opt = {}) {
+    if (!window.THREE || !items || !items.length) return null;
+    const T = window.THREE;
+    let R;
+    try { R = new T.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return null; }
+    R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    R.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;cursor:grab';
+    el.innerHTML = ''; el.appendChild(R.domElement);
+    const built = build(items, opt), cam = new T.PerspectiveCamera(32, 1, 0.05, 100);
+    let th = opt.angle ?? -0.45, ph = 0.18, drag = null, idle = true, lastMove = 0;
     const cv = R.domElement;
     cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; idle = false; });
     cv.addEventListener('pointermove', e => { if (!drag) return; th -= (e.clientX - drag.x) * 0.008; ph = Math.min(1.2, Math.max(0.02, ph + (e.clientY - drag.y) * 0.006)); drag = { x: e.clientX, y: e.clientY }; });
@@ -84,10 +103,28 @@
     const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     let visible = true;
     if ('IntersectionObserver' in window) new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(el);
-    (function loop() { requestAnimationFrame(loop); if (!visible) return; if (!drag && !reduce && (idle || performance.now() - lastMove > 2500)) th += 0.0025; place(); R.render(scene, cam); })();
-    return {
-      setColors(pillar, shelf) { M.frame.color.set(C.PILLAR[pillar].hex); M.shelf.color.set(C.SHELF[shelf].hex); }
-    };
+    (function loop() { requestAnimationFrame(loop); if (!visible) return; if (!drag && !reduce && (idle || performance.now() - lastMove > 2500)) th += 0.0025; fit(cam, built, th, ph, 1.12); R.render(built.scene, cam); })();
+    return { setColors(pillar, shelf) { built.M.frame.color.set(C.PILLAR[pillar].hex); built.M.shelf.color.set(C.SHELF[shelf].hex); } };
   }
-  window.DRModel3D = { mount };
+
+  // 정지 이미지: 렌더러 하나를 돌려 쓰며 PNG 주소를 만듭니다
+  let shared = null;
+  function snapshot(items, opt = {}) {
+    if (!window.THREE || !items || !items.length) return null;
+    const T = window.THREE;
+    if (!shared) {
+      try { shared = new T.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); } catch (e) { return null; }
+      shared.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    }
+    const w = opt.width || 560, h = opt.height || 340;
+    shared.setSize(w, h, false);
+    const built = build(items, { ...opt, floor: false }), cam = new T.PerspectiveCamera(30, w / h, 0.05, 100);
+    fit(cam, built, opt.angle ?? -0.5, opt.pitch ?? 0.2, 1.06);
+    shared.setClearColor(0x000000, 0);
+    shared.render(built.scene, cam);
+    const url = shared.domElement.toDataURL('image/png');
+    built.dispose();
+    return url;
+  }
+  window.DRModel3D = { mount, snapshot };
 })();
