@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/shop.css">
+<script src="/js/catalog.js"></script><script src="/js/shop-config.js"></script><script src="/js/common.js"></script>
+<title>주문 조회 | 드레스룸 스토어</title>
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap" style="padding-top:28px;max-width:760px">
+  <h1 style="font-size:28px">주문 조회</h1>
+  <form class="panel form-grid" id="f" novalidate>
+    <label class="field">주문번호<input name="orderId" required placeholder="DR20261005-XXXXXXXXXXXX" autocomplete="off"></label>
+    <label class="field">주문자 휴대폰 번호<input name="phone" type="tel" inputmode="numeric" required></label>
+    <div class="full row"><span class="err" id="err" role="alert"></span><button class="btn primary" type="submit">조회하기</button></div>
+  </form>
+  <section id="result" style="margin-top:16px"></section>
+</main>
+<div id="site-footer"></div>
+<script>
+(function(){
+  const { C, esc, won } = Shop;
+  Shop.mount('order');
+  const f = document.getElementById('f'), q = new URLSearchParams(location.search);
+  if (q.get('id')) f.orderId.value = q.get('id');
+  f.addEventListener('submit', async e => {
+    e.preventDefault(); const err = document.getElementById('err'); err.textContent = '';
+    try {
+      const r = await fetch('/api/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: f.orderId.value, phone: f.phone.value }) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.error || '조회하지 못했어요.');
+      const o = j.order;
+      document.getElementById('result').innerHTML = `<div class="panel">
+        <div class="row"><h2 style="font-size:19px;margin:0">${esc(o.id)}</h2><span class="badge ${o.status}">${esc(o.statusText)}</span></div>
+        <p class="muted">주문일 ${new Date(o.createdAt).toLocaleString('ko-KR')}</p>
+        ${o.lines.map(l => `<p style="margin:12px 0 2px;font-weight:600">${esc(l.name)} × ${l.qty}</p><p class="muted" style="margin:0">프레임 ${C.PILLAR[l.pillar].name} · 선반 ${C.SHELF[l.shelf].name} · ${l.items.map(it => esc(it.name) + ' × ' + it.n).join(', ')}</p>`).join('')}
+        <div class="sum-row total" style="margin-top:14px"><span>결제 금액</span><span>${won(o.amount)}</span></div>
+        <p class="muted">배송지 ${esc(o.shipping.addr1)} ${esc(o.shipping.addr2 || '')}${o.shipping.date ? ' · 희망일 ' + esc(o.shipping.date) : ''}</p>
+        ${o.tracking ? `<p>송장/배송 안내: <b>${esc(o.tracking)}</b></p>` : ''}
+        ${o.payment && o.payment.receiptUrl ? `<a class="btn sm" href="${esc(o.payment.receiptUrl)}" target="_blank" rel="noopener">영수증 보기</a>` : ''}</div>`;
+    } catch (ex) { err.textContent = ex.message; document.getElementById('result').innerHTML = ''; }
+  });
+})();
+</script>
+</body>
+</html>

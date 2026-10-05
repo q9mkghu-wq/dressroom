@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/shop.css">
+<script src="/js/catalog.js"></script><script src="/js/shop-config.js"></script><script src="/js/common.js"></script>
+<title>결제 실패 | 드레스룸 스토어</title>
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap" style="padding-top:40px;max-width:720px">
+  <section class="panel" id="box"></section>
+</main>
+<div id="site-footer"></div>
+<script>
+Shop.mount('');
+(function(){
+  const q = new URLSearchParams(location.search), code = q.get('code') || '', msg = q.get('message') || '결제가 완료되지 않았어요.';
+  const canceled = code === 'PAY_PROCESS_CANCELED';
+  document.getElementById('box').innerHTML = `<h1 style="font-size:24px">${canceled ? '결제를 취소했어요' : '결제에 실패했어요'}</h1>
+    <p>${Shop.esc(canceled ? '결제창을 닫아 결제가 진행되지 않았어요. 장바구니는 그대로 남아 있어요.' : msg)}</p>
+    ${code && !canceled ? `<p class="muted">오류 코드: ${Shop.esc(code)}</p>` : ''}
+    <p style="display:flex;gap:8px"><a class="btn primary" href="/checkout">다시 결제하기</a><a class="btn" href="/cart">장바구니</a></p>`;
+})();
+</script>
+</body>
+</html>

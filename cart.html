@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/shop.css">
+<script src="/js/catalog.js"></script><script src="/js/shop-config.js"></script><script src="/js/common.js"></script>
+<title>장바구니 | 드레스룸 스토어</title>
+<style>
+.line{display:grid;grid-template-columns:180px minmax(0,1fr) auto;gap:16px;align-items:start;padding:18px 0;border-bottom:1px solid var(--rule)}
+.line .elev{height:120px}
+.line ul{list-style:none;margin:6px 0 0;padding:0;font-size:13.5px;color:var(--ink2)}
+.line li{display:flex;justify-content:space-between;gap:10px;max-width:420px}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.qty button{font:inherit;width:34px;height:34px;border:0;background:var(--card);color:var(--ink);cursor:pointer}
+.qty span{min-width:34px;text-align:center}
+.colors{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px;font-size:13px;color:var(--ink2);align-items:center}
+.colors select{font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--rule);border-radius:5px;padding:4px 6px}
+.line-r{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+@media (max-width:640px){.line{grid-template-columns:1fr}.line-r{flex-direction:row;justify-content:space-between;align-items:center}}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap" style="padding-top:28px">
+  <h1 style="font-size:28px">장바구니</h1>
+  <div class="layout2">
+    <section id="lines" aria-label="담은 구성"></section>
+    <aside class="panel sticky" id="summary"></aside>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script>
+(async function(){
+  const { C, esc, won } = Shop;
+  Shop.mount('cart');
+  await Shop.loadSettings();
+  const opt = (obj, cur) => Object.entries(obj).map(([k, v]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${v.name}</option>`).join('');
+  function render() {
+    const lines = Shop.cart.get();
+    const box = document.getElementById('lines'), sum = document.getElementById('summary');
+    if (!lines.length) {
+      box.innerHTML = '<div class="empty"><p>장바구니가 비어 있어요.</p><p><a class="btn primary" href="/planner">배치 플래너로 구성하기</a> <a class="btn" href="/#sets">추천 세트 보기</a></p></div>';
+      sum.hidden = true; return;
+    }
+    sum.hidden = false;
+    box.innerHTML = lines.map(l => {
+      const unit = Shop.lineUnit(l), items = l.layout && l.layout.items ? l.layout.items : l.items.flatMap(it => Array(it.n).fill({ t: it.t, w: it.w, r: 0, x: 0, y: 0 })).map((m, i, a) => ({ ...m, x: i }));
+      return `<article class="line" data-id="${l.id}">
+        <div class="elev">${Shop.elevation(items, l.pillar, l.shelf, { label: l.name + ' 정면도' })}</div>
+        <div><h3>${esc(l.name)}</h3>
+          <ul>${l.items.map(it => `<li><span>${esc(C.itemName(it.t, it.w))} × ${it.n}</span><span>${won((Shop.price(it.t, it.w) || 0) * it.n)}</span></li>`).join('')}</ul>
+          <div class="colors"><label>프레임 <select data-k="pillar">${opt(C.PILLAR, l.pillar)}</select></label><label>선반 <select data-k="shelf">${opt(C.SHELF, l.shelf)}</select></label>
+          ${l.layout && l.layout.room ? `<a href="/planner?layout=${Shop.encodeLayout(l.layout)}">플래너에서 다시 보기</a>` : ''}</div>
+        </div>
+        <div class="line-r"><span class="price">${won(unit * l.qty)}</span>
+          <span class="qty" aria-label="수량"><button data-q="-1" aria-label="수량 줄이기">−</button><span>${l.qty}</span><button data-q="1" aria-label="수량 늘리기">+</button></span>
+          <button class="btn sm danger" data-del>삭제</button></div>
+      </article>`;
+    }).join('');
+    const t = Shop.totals(lines);
+    sum.innerHTML = `<h3 style="margin-bottom:10px">결제 예정 금액</h3>
+      <div class="sum-row"><span>상품 금액</span><span>${won(t.subtotal)}</span></div>
+      <div class="sum-row"><span>배송비</span><span>${t.shippingFee ? won(t.shippingFee) : '무료'}</span></div>
+      <div class="sum-row total"><span>합계</span><span>${won(t.total)}</span></div>
+      <a class="btn primary big" style="width:100%;margin-top:14px" href="/checkout">주문하기</a>
+      <p class="muted" style="margin:10px 0 0">설치·배송 일정은 주문 후 따로 안내해 드려요.</p>`;
+  }
+  document.getElementById('lines').addEventListener('click', e => {
+    const art = e.target.closest('.line'); if (!art) return; const id = art.dataset.id;
+    const q = e.target.closest('[data-q]'); if (q) { const l = Shop.cart.get().find(x => x.id === id); Shop.cart.setQty(id, l.qty + Number(q.dataset.q)); render(); }
+    if (e.target.closest('[data-del]')) { Shop.cart.remove(id); render(); Shop.toast('장바구니에서 뺐어요'); }
+  });
+  document.getElementById('lines').addEventListener('change', e => {
+    const s = e.target.closest('select[data-k]'); if (!s) return; const id = s.closest('.line').dataset.id;
+    Shop.cart.save(Shop.cart.get().map(l => l.id === id ? { ...l, [s.dataset.k]: s.value, layout: l.layout ? { ...l.layout, [s.dataset.k]: s.value } : l.layout } : l)); render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>

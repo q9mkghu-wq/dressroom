@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/shop.css">
+<script src="/js/catalog.js"></script><script src="/js/shop-config.js"></script><script src="/js/common.js"></script>
+<title>결제 완료 | 드레스룸 스토어</title>
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap" style="padding-top:40px;max-width:720px">
+  <section class="panel" id="box"><p>결제를 확인하고 있어요. 이 화면을 닫지 말고 잠시만 기다려 주세요…</p></section>
+</main>
+<div id="site-footer"></div>
+<script>
+(async function(){
+  const { C, esc, won } = Shop;
+  Shop.mount('');
+  const q = new URLSearchParams(location.search), box = document.getElementById('box');
+  const paymentKey = q.get('paymentKey'), orderId = q.get('orderId'), amount = Number(q.get('amount'));
+  if (!paymentKey || !orderId) { box.innerHTML = '<h1 style="font-size:24px">결제 정보가 없어요</h1><p><a class="btn" href="/cart">장바구니로</a></p>'; return; }
+  try {
+    const r = await fetch('/api/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentKey, orderId, amount }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || '결제 승인에 실패했어요.');
+    Shop.cart.clear();
+    const o = j.order;
+    box.innerHTML = `<h1 style="font-size:26px">주문이 완료됐어요</h1>
+      <p class="muted">주문번호 <b style="color:var(--ink)">${esc(o.id)}</b> · 주문 조회 때 필요하니 보관해 주세요.</p>
+      ${o.lines.map(l => `<p style="margin:14px 0 2px;font-weight:600">${esc(l.name)} × ${l.qty}</p><p class="muted" style="margin:0">프레임 ${C.PILLAR[l.pillar].name} · 선반 ${C.SHELF[l.shelf].name} · ${l.items.map(it => esc(it.name) + ' × ' + it.n).join(', ')}</p>`).join('')}
+      <div class="sum-row total" style="margin-top:16px"><span>결제 금액</span><span>${won(o.amount)}</span></div>
+      <p class="muted">배송지 ${esc(o.shipping.addr1)} ${esc(o.shipping.addr2 || '')}</p>
+      <p style="display:flex;gap:8px;flex-wrap:wrap">${o.payment && o.payment.receiptUrl ? `<a class="btn" href="${esc(o.payment.receiptUrl)}" target="_blank" rel="noopener">영수증 보기</a>` : ''}<a class="btn" href="/order?id=${encodeURIComponent(o.id)}">주문 조회</a><a class="btn primary" href="/">쇼핑 계속하기</a></p>`;
+  } catch (ex) {
+    box.innerHTML = `<h1 style="font-size:24px">결제를 완료하지 못했어요</h1><p class="err">${esc(ex.message)}</p><p class="muted">카드 승인이 됐는데 이 화면이 보이면 주문번호(${esc(orderId)})와 함께 고객센터로 알려 주세요.</p><p><a class="btn" href="/cart">장바구니로</a></p>`;
+  }
+})();
+</script>
+</body>
+</html>

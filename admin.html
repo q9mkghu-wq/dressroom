@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/shop.css">
+<script src="/js/catalog.js"></script><script src="/js/shop-config.js"></script><script src="/js/common.js"></script>
+<meta name="robots" content="noindex,nofollow">
+<title>관리자 | 드레스룸 스토어</title>
+<style>
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin:8px 0 18px}
+.tabs button{font:inherit;font-size:15px;padding:10px 14px;border:0;background:none;color:var(--ink2);border-bottom:2px solid transparent;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.det td{background:var(--sheet)}
+.det-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 24px;font-size:13.5px}
+.det-grid b{display:block;color:var(--ink2);font-weight:500;font-size:12.5px}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--rule);border-radius:6px;padding:8px 12px;background:var(--card);font-size:14px}
+.prow input{width:120px;text-align:right;font:inherit;font-size:15px;color:var(--ink);background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:5px 7px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.toolbar select{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--rule);border-radius:5px;background:var(--card);color:var(--ink)}
+.oscroll{overflow-x:auto}
+.det input,.det textarea{font:inherit;font-size:13.5px;padding:5px 7px;border:1px solid var(--rule);border-radius:4px;width:100%;background:var(--card);color:var(--ink)}
+</style>
+</head>
+<body>
+<header class="site-h"><a class="brand" href="/">관리자</a><nav><a href="/">쇼핑몰 보기</a><a href="/planner#admin">세트 편집 (플래너)</a><button class="btn sm" id="logout" hidden>로그아웃</button></nav></header>
+<main class="wrap" style="padding-top:24px">
+  <section class="panel" id="login" style="max-width:420px">
+    <h1 style="font-size:22px">관리자 로그인</h1>
+    <form id="lf" class="form-grid" style="grid-template-columns:1fr"><label class="field">비밀번호<input type="password" name="pw" autocomplete="current-password" required></label>
+      <div class="row"><span class="err" id="lerr" role="alert"></span><button class="btn primary" type="submit">로그인</button></div></form>
+  </section>
+  <section id="app" hidden>
+    <div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="orders">주문 관리</button><button role="tab" aria-selected="false" data-tab="settings">단가·배송비</button></div>
+    <div id="tab-orders">
+      <div class="toolbar"><label class="muted">상태 <select id="filter"><option value="">전체</option></select></label><button class="btn sm" id="reload">새로고침</button><span class="muted" id="ocount"></span></div>
+      <div class="oscroll"><table class="tbl"><thead><tr><th>주문일</th><th>주문번호</th><th>주문자</th><th class="hide-m">상품</th><th>금액</th><th>상태</th></tr></thead><tbody id="orows"></tbody></table></div>
+      <div class="row" style="margin-top:12px"><button class="btn sm" id="prev">이전</button><span class="muted" id="pinfo"></span><button class="btn sm" id="next">다음</button></div>
+    </div>
+    <div id="tab-settings" hidden>
+      <h2 style="font-size:18px">모듈 단가</h2>
+      <div class="pgrid" id="prices"></div>
+      <h2 style="font-size:18px;margin-top:24px">배송비</h2>
+      <label class="prow" style="max-width:340px"><span>주문당 배송비 (0이면 무료)</span><span><input type="number" id="ship" min="0" step="1000"> 원</span></label>
+      <p class="muted">세트 구성은 <a href="/planner#admin">플래너 관리자 모드</a>에서 모듈을 배치하며 만들고 고칠 수 있어요.</p>
+      <div class="row" style="margin-top:14px"><span class="err" id="serr" role="alert"></span><span><button class="btn" id="sdef">기본 단가로</button> <button class="btn primary" id="ssave">저장</button></span></div>
+    </div>
+  </section>
+</main>
+<script>
+(function(){
+  const { C, esc, won } = Shop;
+  const $ = id => document.getElementById(id);
+  let pw = sessionStorage.getItem('dr-admin-pw') || '', page = 0, statuses = {}, cache = [];
+  async function api(path, opt = {}) {
+    const r = await fetch(path, { ...opt, headers: { 'Content-Type': 'application/json', 'x-admin-password': pw } });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) { logout(); throw new Error(j.error || '다시 로그인해 주세요.'); }
+    if (!r.ok) throw new Error(j.error || '요청에 실패했어요.');
+    return j;
+  }
+  function logout() { pw = ''; sessionStorage.removeItem('dr-admin-pw'); $('app').hidden = true; $('login').hidden = false; $('logout').hidden = true; }
+  function start() { $('login').hidden = true; $('app').hidden = false; $('logout').hidden = false; }
+  $('logout').onclick = logout;
+  $('lf').addEventListener('submit', async e => {
+    e.preventDefault(); pw = e.target.pw.value; $('lerr').textContent = '';
+    try { await loadOrders(); sessionStorage.setItem('dr-admin-pw', pw); start(); } catch (ex) { $('lerr').textContent = ex.message; }
+  });
+  document.querySelector('.tabs').addEventListener('click', e => {
+    const b = e.target.closest('[data-tab]'); if (!b) return;
+    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    $('tab-orders').hidden = b.dataset.tab !== 'orders'; $('tab-settings').hidden = b.dataset.tab !== 'settings';
+    if (b.dataset.tab === 'settings') loadSettings().catch(ex => { $('serr').textContent = ex.message; });
+  });
+
+  async function loadOrders() {
+    const j = await api('/api/admin/orders?page=' + page); statuses = j.statuses; cache = j.orders;
+    const f = $('filter');
+    if (f.options.length === 1) f.insertAdjacentHTML('beforeend', Object.entries(statuses).map(([k, v]) => `<option value="${k}">${v}</option>`).join(''));
+    $('pinfo').textContent = `${page + 1} / ${Math.max(1, Math.ceil(j.total / j.size))} 페이지 · 전체 ${j.total}건`;
+    $('prev').disabled = page === 0; $('next').disabled = (page + 1) * j.size >= j.total;
+    renderOrders();
+  }
+  function renderOrders() {
+    const f = $('filter').value, list = cache.filter(o => !f || o.status === f);
+    $('ocount').textContent = f ? `이 페이지에서 ${list.length}건` : '';
+    $('orows').innerHTML = list.map(o => `<tr data-id="${esc(o.id)}" style="cursor:pointer"><td>${new Date(o.createdAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${esc(o.id)}</td><td>${esc(o.customer.name)}<br><span class="muted">${esc(o.customer.phone)}</span></td><td class="hide-m">${esc(o.orderName)}</td><td>${won(o.amount)}</td><td><span class="badge ${o.status}">${esc(statuses[o.status] || o.status)}</span></td></tr>
+      <tr class="det" data-det="${esc(o.id)}" hidden><td colspan="6">${detail(o)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">주문이 없어요.</td></tr>';
+  }
+  function detail(o) {
+    const s = o.shipping;
+    const opts = ['paid', 'preparing', 'shipping', 'done'].map(k => `<option value="${k}"${o.status === k ? ' selected' : ''}>${statuses[k]}</option>`).join('');
+    const lines = o.lines.map(l => `<div style="margin-bottom:6px"><strong>${esc(l.name)} × ${l.qty}</strong> · 프레임 ${C.PILLAR[l.pillar].name} · 선반 ${C.SHELF[l.shelf].name}<br>${l.items.map(it => esc(it.name) + ' × ' + it.n).join(', ')}${l.layout && l.layout.room ? ` · <a href="/planner?layout=${Shop.encodeLayout(l.layout)}" target="_blank">배치 보기</a>` : ''}</div>`).join('');
+    const pay = o.payment ? `${esc(o.payment.method || '')} · ${new Date(o.payment.approvedAt).toLocaleString('ko-KR')}${o.payment.receiptUrl ? ` · <a href="${esc(o.payment.receiptUrl)}" target="_blank" rel="noopener">영수증</a>` : ''}` : '미결제';
+    return `<div class="det-grid">
+      <div><b>배송지</b>${esc(s.receiver)} · ${esc(s.phone)}<br>${s.zip ? '(' + esc(s.zip) + ') ' : ''}${esc(s.addr1)} ${esc(s.addr2)}<br>희망일 ${esc(s.date || '-')}<br>요청 ${esc(s.memo || '-')}</div>
+      <div><b>구성</b>${lines}</div>
+      <div><b>결제</b>${pay}<br>상품 ${won(o.subtotal)} + 배송 ${won(o.shippingFee)} = <strong>${won(o.amount)}</strong>${o.cancel ? `<br><span class="err">취소: ${esc(o.cancel.reason || '')} (${o.cancel.refunded ? '환불 완료' : '미결제 취소'})</span>` : ''}</div>
+      <div><b>처리</b>${o.status !== 'pending' && o.status !== 'canceled' ? `<select data-status>${opts}</select>` : ''}
+        <input data-tracking placeholder="송장번호/배송 안내" value="${esc(o.tracking || '')}" style="margin:6px 0">
+        <textarea data-memo rows="2" placeholder="관리자 메모">${esc(o.adminMemo || '')}</textarea>
+        <div style="display:flex;gap:6px;margin-top:6px"><button class="btn sm primary" data-save>저장</button>${o.status !== 'canceled' ? `<button class="btn sm danger" data-cancel>${o.payment ? '결제 취소(환불)' : '주문 취소'}</button>` : ''}</div><span class="err" data-err></span></div>
+    </div>`;
+  }
+  $('orows').addEventListener('click', async e => {
+    const tr = e.target.closest('tr[data-id]');
+    if (tr) { const d = document.querySelector(`tr[data-det="${CSS.escape(tr.dataset.id)}"]`); d.hidden = !d.hidden; return; }
+    const det = e.target.closest('tr[data-det]'); if (!det) return;
+    const id = det.dataset.det, err = det.querySelector('[data-err]'); err.textContent = '';
+    try {
+      if (e.target.closest('[data-save]')) {
+        const st = det.querySelector('[data-status]');
+        await api('/api/admin/orders', { method: 'PATCH', body: JSON.stringify({ orderId: id, status: st ? st.value : undefined, tracking: det.querySelector('[data-tracking]').value, adminMemo: det.querySelector('[data-memo]').value }) });
+        Shop.toast('저장했어요'); await loadOrders();
+      }
+      if (e.target.closest('[data-cancel]')) {
+        const o = cache.find(x => x.id === id);
+        const reason = prompt(o.payment ? `${won(o.amount)} 결제를 취소하고 환불할까요? 취소 사유를 입력해 주세요.` : '주문을 취소할까요? 사유를 입력해 주세요.', '고객 요청');
+        if (reason === null) return;
+        await api('/api/admin/orders', { method: 'PATCH', body: JSON.stringify({ orderId: id, action: 'cancel', reason }) });
+        Shop.toast('취소했어요'); await loadOrders();
+      }
+    } catch (ex) { err.textContent = ex.message; }
+  });
+  $('filter').onchange = renderOrders;
+  $('reload').onclick = () => loadOrders().catch(ex => Shop.toast(ex.message));
+  $('prev').onclick = () => { page = Math.max(0, page - 1); loadOrders(); };
+  $('next').onclick = () => { page++; loadOrders(); };
+
+  async function loadSettings() {
+    const s = await (await fetch('/api/settings')).json();
+    $('prices').innerHTML = Object.entries(C.TYPES).flatMap(([t, d]) => d.widths.map(w => [`${t}-${w}`, C.itemName(t, w)]))
+      .map(([k, l]) => `<label class="prow"><span>${esc(l)}</span><span><input type="number" min="0" step="100" data-k="${k}" value="${s.prices[k] ?? ''}"> 원</span></label>`).join('');
+    $('ship').value = s.shippingFee || 0;
+  }
+  $('sdef').onclick = () => document.querySelectorAll('#prices input').forEach(i => { i.value = C.DEFAULT_PRICES[i.dataset.k] ?? ''; });
+  $('ssave').onclick = async () => {
+    const err = $('serr'); err.textContent = ''; const prices = {}; let bad = null;
+    document.querySelectorAll('#prices input').forEach(i => { const n = Number(i.value); if (i.value === '' || !Number.isInteger(n) || n < 0) bad = bad || i; else prices[i.dataset.k] = n; });
+    const ship = Number($('ship').value); if (!Number.isInteger(ship) || ship < 0) bad = bad || $('ship');
+    if (bad) { err.textContent = '0 이상의 정수(원)로 입력해 주세요.'; bad.focus(); return; }
+    try { await api('/api/settings', { method: 'PUT', body: JSON.stringify({ prices, shippingFee: ship }) }); Shop.toast('저장했어요. 모든 고객에게 바로 적용돼요.'); }
+    catch (ex) { err.textContent = ex.message; }
+  };
+  if (pw) loadOrders().then(start).catch(() => logout());
+})();
+</script>
+</body>
+</html>

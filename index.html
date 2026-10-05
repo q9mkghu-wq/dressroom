@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/shop.css">
+<script src="/js/catalog.js"></script><script src="/js/shop-config.js"></script><script src="/js/common.js"></script>
+<title>드레스룸 스토어 | 내 방에 맞춰 배치하고 주문하는 철제 드레스룸</title>
+<meta name="description" content="방 치수를 넣고 모듈을 직접 배치해 보세요. 배치한 그대로 장바구니에 담아 주문할 수 있어요.">
+<style>
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:36px;align-items:center;padding:54px 0 48px}
+.hero .elev{height:300px;background:var(--card);border:1px solid var(--rule);border-bottom:6px solid var(--grid)}
+.hero-cta{display:flex;flex-wrap:wrap;gap:10px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-size:13.5px;color:var(--ink2)}
+.facts b{color:var(--ink);font-weight:600}
+.mod-card .elev{height:130px}
+.mod-w{display:flex;flex-wrap:wrap;gap:6px}
+.mod-w span{font-size:13px;border:1px solid var(--rule);border-radius:4px;padding:2px 8px}
+@media (max-width:860px){.hero{grid-template-columns:1fr;padding:32px 0}.hero .elev{height:220px}}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+<main>
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <h1>내 방 치수에 맞춰 배치하고,<br>그대로 주문하세요</h1>
+        <p class="lead">가로·세로를 입력하고 모듈을 끌어다 벽에 붙여 보세요. 들어갈지 미리 확인하고, 배치한 구성 그대로 장바구니에 담을 수 있어요.</p>
+        <div class="hero-cta"><a class="btn primary big" href="/planner">배치 플래너 시작하기</a><a class="btn big" href="#sets">추천 세트 보기</a></div>
+        <div class="facts"><span>모듈 깊이 <b>40cm</b></span><span>폭 <b>40 · 80 · 100 · 120cm</b></span><span>프레임 <b>블랙 · 화이트</b></span><span>선반 <b>4가지 색</b></span></div>
+      </div>
+      <div class="elev" id="heroElev"></div>
+    </section>
+  </div>
+
+  <section class="sec" id="sets">
+    <div class="wrap">
+      <div class="sec-h">
+        <div><h2>방 크기별 추천 세트</h2><p class="muted" style="margin:0">벽 길이에 맞는 세트를 고르고, 플래너에서 내 방에 맞게 고쳐서 주문할 수도 있어요.</p></div>
+        <div class="chips" id="groupChips" role="group" aria-label="세트 분류"></div>
+      </div>
+      <div class="grid" id="setGrid"></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-h"><div><h2>모듈 구성</h2><p class="muted" style="margin:0">모든 모듈은 실제 폭이 표기 폭보다 6mm 길어요. 플래너에서 원하는 모듈만 골라 조합할 수 있어요.</p></div><a class="btn" href="/planner">플래너에서 조합하기</a></div>
+      <div class="grid" id="modGrid"></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="wrap">
+      <h2 style="margin-bottom:18px">주문은 이렇게 진행돼요</h2>
+      <div class="steps">
+        <div class="step"><b>1</b><h3>방 크기 입력</h3><p class="muted">설치할 방의 가로·세로를 cm로 넣어요.</p></div>
+        <div class="step"><b>2</b><h3>모듈 배치</h3><p class="muted">모듈을 끌면 벽과 옆 모듈에 자석처럼 붙어요. 3D로 바로 확인해요.</p></div>
+        <div class="step"><b>3</b><h3>장바구니 담기</h3><p class="muted">배치한 구성과 색상이 그대로 담기고 금액이 계산돼요.</p></div>
+        <div class="step"><b>4</b><h3>결제·배송</h3><p class="muted">주문서를 작성하고 카드·간편결제로 결제해요.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="site-footer"></div>
+<script>
+(async function(){
+  const { C, esc, won } = Shop;
+  Shop.mount('index');
+  const st = await Shop.loadSettings();
+  const sample = st.sets.find(s => s.k === 'SET M') || st.sets[0];
+  document.getElementById('heroElev').innerHTML = Shop.elevation(sample.items, 'black', 'oak', { label: sample.k + ' 정면도' });
+
+  const groups = [...new Set(st.sets.map(s => s.g))];
+  let cur = groups[0];
+  const chips = document.getElementById('groupChips');
+  function renderSets() {
+    chips.innerHTML = groups.map(g => `<button class="chip" aria-pressed="${g === cur}" data-g="${esc(g)}">${esc(g)}</button>`).join('');
+    document.getElementById('setGrid').innerHTML = st.sets.map((s, i) => s.g !== cur ? '' : `
+      <article class="card">
+        <div class="elev">${Shop.elevation(s.items, 'black', 'oak', { label: s.k + ' 정면도' })}</div>
+        <div class="row"><h3>${esc(s.k)}</h3><span class="muted">${Shop.setSizeText(s)}</span></div>
+        <p class="mods">${Shop.countItems(s.items).map(it => esc(C.itemName(it.t, it.w)) + (it.n > 1 ? ' × ' + it.n : '')).join(' + ')}</p>
+        <div class="row" style="margin-top:auto"><span class="price">${won(Shop.setTotal(s))}</span>
+          <span style="display:flex;gap:6px"><a class="btn sm" href="/planner?set=${encodeURIComponent(s.k)}">플래너에서 열기</a><button class="btn sm primary" data-add="${i}">담기</button></span></div>
+      </article>`).join('');
+  }
+  chips.addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; cur = b.dataset.g; renderSets(); });
+  document.getElementById('setGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-add]'); if (!b) return;
+    const s = st.sets[+b.dataset.add]; Shop.cart.add(Shop.setToLine(s));
+    Shop.toast(`${s.k}를 장바구니에 담았어요. 색상은 장바구니에서 바꿀 수 있어요.`);
+  });
+  renderSets();
+
+  const mods = [];
+  Object.entries(C.TYPES).forEach(([t, d]) => mods.push({ t, d }));
+  document.getElementById('modGrid').innerHTML = mods.map(({ t, d }) => {
+    const w0 = d.widths[d.widths.length - 1];
+    return `<article class="card mod-card"><div class="elev">${Shop.elevation([{ t, w: w0, r: 0, x: 0, y: 0 }], 'black', 'oak', { label: d.name + ' 정면도' })}</div>
+      <h3>${esc(d.name)}</h3><p class="mods">${esc(d.desc)}</p>
+      <div class="mod-w">${d.widths.map(w => `<span>${t === 'corner' ? '60×60cm' : w / 10 + 'cm'} · ${won(Shop.price(t, w))}</span>`).join('')}</div></article>`;
+  }).join('');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/shop.css">
+<script src="/js/catalog.js"></script><script src="/js/shop-config.js"></script><script src="/js/common.js"></script>
+<script src="https://js.tosspayments.com/v2/standard"></script>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<title>주문서 | 드레스룸 스토어</title>
+<style>
+.step-h{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.step-h .n{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ink);display:inline-grid;place-items:center;font-size:12.5px;font-weight:600}
+.zip{display:flex;gap:8px}
+.zip input{max-width:140px}
+.mini li{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;padding:3px 0}
+.mini{list-style:none;margin:0 0 8px;padding:0}
+.agree{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin-top:12px}
+.agree input{margin-top:4px}
+#payStep[aria-disabled="true"]{opacity:.45;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap" style="padding-top:28px">
+  <h1 style="font-size:28px">주문서</h1>
+  <div id="notice"></div>
+  <div class="layout2">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <section class="panel" id="infoStep">
+        <h2 class="step-h" style="font-size:18px"><span class="n">1</span>주문자·배송 정보</h2>
+        <form id="form" class="form-grid" novalidate>
+          <label class="field">주문자 이름<input name="name" autocomplete="name" required maxlength="30"></label>
+          <label class="field">휴대폰 번호<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="01012345678" required></label>
+          <label class="field full">이메일 (결제 내역 받을 주소, 선택)<input name="email" type="email" autocomplete="email" maxlength="100"></label>
+          <div class="field full">우편번호·주소
+            <div class="zip"><input name="zip" readonly placeholder="우편번호" aria-label="우편번호"><button type="button" class="btn" id="zipBtn">주소 찾기</button></div>
+            <input name="addr1" placeholder="기본 주소" required aria-label="기본 주소" style="margin-top:6px">
+            <input name="addr2" placeholder="상세 주소 (동·호수)" aria-label="상세 주소" maxlength="100" style="margin-top:6px">
+          </div>
+          <label class="field">받는 분 (주문자와 다르면)<input name="receiver" maxlength="30"></label>
+          <label class="field">받는 분 연락처 (다르면)<input name="rphone" type="tel" inputmode="numeric"></label>
+          <label class="field">설치·배송 희망일 (선택)<input name="date" type="date"></label>
+          <label class="field full">요청 사항 (선택)<textarea name="memo" rows="2" maxlength="300" placeholder="엘리베이터 유무, 설치 공간 특이사항 등"></textarea></label>
+          <label class="agree full"><input type="checkbox" name="agree"> <span>주문 내용을 확인했으며, 배송을 위한 개인정보 수집·이용(이름, 연락처, 주소)에 동의합니다. <a href="/policy#privacy" target="_blank">자세히</a></span></label>
+          <div class="full row"><span class="err" id="formErr" role="alert"></span><button class="btn primary big" id="toPay" type="submit">결제 단계로</button></div>
+        </form>
+      </section>
+      <section class="panel" id="payStep" aria-disabled="true">
+        <h2 class="step-h" style="font-size:18px"><span class="n">2</span>결제</h2>
+        <div id="payment-method"></div>
+        <div id="agreement"></div>
+        <div class="row" style="margin-top:12px"><span class="err" id="payErr" role="alert"></span><button class="btn primary big" id="payBtn" disabled>결제하기</button></div>
+      </section>
+    </div>
+    <aside class="panel sticky" id="summary"></aside>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script>
+(async function(){
+  const { C, esc, won } = Shop;
+  Shop.mount('cart');
+  await Shop.loadSettings();
+  const lines = Shop.cart.get();
+  if (!lines.length) { location.replace('/cart'); return; }
+  const t = Shop.totals(lines);
+  document.getElementById('summary').innerHTML = `<h3 style="margin-bottom:10px">주문 상품</h3>
+    ${lines.map(l => `<p style="margin:8px 0 2px;font-weight:600">${esc(l.name)} <span class="muted">× ${l.qty}</span></p>
+      <p class="muted" style="margin:0 0 4px">프레임 ${C.PILLAR[l.pillar].name} · 선반 ${C.SHELF[l.shelf].name}</p>
+      <ul class="mini">${l.items.map(it => `<li><span>${esc(C.itemName(it.t, it.w))} × ${it.n}</span></li>`).join('')}</ul>`).join('')}
+    <div class="sum-row" style="border-top:1px solid var(--rule);margin-top:8px;padding-top:10px"><span>상품 금액</span><span>${won(t.subtotal)}</span></div>
+    <div class="sum-row"><span>배송비</span><span>${t.shippingFee ? won(t.shippingFee) : '무료'}</span></div>
+    <div class="sum-row total"><span>결제 금액</span><span id="amt">${won(t.total)}</span></div>
+    <a class="btn sm" href="/cart" style="margin-top:10px">장바구니 수정</a>`;
+
+  let cfg = null;
+  try { cfg = await (await fetch('/api/config')).json(); } catch (e) {}
+  const note = document.getElementById('notice');
+  if (!cfg || !cfg.tossClientKey || !cfg.dbReady) note.innerHTML = '<p class="notice">결제 설정이 아직 끝나지 않아 주문할 수 없어요. 관리자는 Vercel 환경 변수(TOSS_CLIENT_KEY, TOSS_SECRET_KEY)와 Upstash Redis 연결을 확인해 주세요.</p>';
+
+  document.getElementById('zipBtn').onclick = () => {
+    if (!window.daum || !daum.Postcode) { document.getElementById('formErr').textContent = '주소 검색을 불러오지 못했어요. 주소를 직접 입력해 주세요.'; document.querySelector('[name=addr1]').readOnly = false; return; }
+    new daum.Postcode({ oncomplete: d => { const f = document.getElementById('form'); f.zip.value = d.zonecode; f.addr1.value = d.roadAddress || d.jibunAddress; f.addr2.focus(); } }).open();
+  };
+
+  const form = document.getElementById('form');
+  let order = null, widgets = null;
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = document.getElementById('formErr'); err.textContent = '';
+    const v = Object.fromEntries(new FormData(form)); const digits = s => String(s || '').replace(/\D/g, '');
+    const bad = (name, msg) => { const el = form[name]; el.setAttribute('aria-invalid', 'true'); el.focus(); err.textContent = msg; };
+    form.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
+    if (!v.name.trim()) return bad('name', '주문자 이름을 입력해 주세요.');
+    if (digits(v.phone).length < 10) return bad('phone', '휴대폰 번호를 숫자로 입력해 주세요.');
+    if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) return bad('email', '이메일 형식을 확인해 주세요.');
+    if (!v.addr1.trim()) return bad('addr1', '배송 주소를 입력해 주세요.');
+    if (!form.agree.checked) { err.textContent = '주문 내용 확인 및 개인정보 수집·이용에 동의해 주세요.'; form.agree.focus(); return; }
+    const btn = document.getElementById('toPay'); btn.disabled = true; btn.textContent = '주문 확인 중…';
+    try {
+      const r = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        lines: lines.map(l => ({ name: l.name, pillar: l.pillar, shelf: l.shelf, qty: l.qty, items: l.items, layout: l.layout || null })),
+        customer: { name: v.name, phone: v.phone, email: v.email },
+        shipping: { receiver: v.receiver, phone: v.rphone, zip: v.zip, addr1: v.addr1, addr2: v.addr2, date: v.date, memo: v.memo },
+        agree: true }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || '주문을 만들지 못했어요.');
+      order = j;
+      document.getElementById('amt').textContent = won(order.amount);
+      form.querySelectorAll('input,textarea,button').forEach(el => el.disabled = true);
+      btn.textContent = '정보 입력 완료';
+      await initPayment();
+    } catch (ex) { err.textContent = ex.message; btn.disabled = false; btn.textContent = '결제 단계로'; }
+  });
+
+  async function initPayment() {
+    const step = document.getElementById('payStep'), perr = document.getElementById('payErr');
+    step.setAttribute('aria-disabled', 'false'); step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    try {
+      const toss = TossPayments(cfg.tossClientKey);
+      widgets = toss.widgets({ customerKey: TossPayments.ANONYMOUS });
+      await widgets.setAmount({ currency: 'KRW', value: order.amount });
+      await Promise.all([widgets.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' }), widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' })]);
+      document.getElementById('payBtn').disabled = false;
+    } catch (ex) { perr.textContent = '결제 화면을 불러오지 못했어요: ' + (ex.message || ex); }
+  }
+  document.getElementById('payBtn').onclick = async () => {
+    const perr = document.getElementById('payErr'); perr.textContent = '';
+    try {
+      await widgets.requestPayment({
+        orderId: order.orderId, orderName: order.orderName,
+        customerName: order.customerName, customerEmail: order.customerEmail, customerMobilePhone: order.customerMobilePhone,
+        successUrl: location.origin + '/success', failUrl: location.origin + '/fail'
+      });
+    } catch (ex) { perr.textContent = ex.message || '결제를 시작하지 못했어요.'; }
+  };
+})();
+</script>
+</body>
+</html>
