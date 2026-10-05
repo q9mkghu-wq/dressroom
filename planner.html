@@ -426,7 +426,7 @@ const H=MOD_H/1000,D=DEPTH/1000,P=0.03,t=0.02;
 function bx(g,w,h,d,x,y,z,m){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);g.add(b);return b}
 function rodX(g,len,y){const r=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.013,len,14),MAT.rod);r.rotation.z=Math.PI/2;r.position.set(0,y,0);g.add(r)}
 function rodAB(g,a,b){const v=new THREE.Vector3().subVectors(b,a),r=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.013,v.length(),14),MAT.rod);r.position.copy(a).add(b).multiplyScalar(.5);r.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());g.add(r)}
-const RUNG=[0.10,0.62,1.05,1.92],RUNG5=[0.10,0.555,1.01,1.465,1.92],RT=0.018,PH=H;
+const RUNG=[0.10,0.62,1.05,1.92],RUNG5=[0.10,0.62,1.05,1.485,1.92],RT=0.018,PH=H;
 const sY=(i,r=RUNG)=>r[i]+RT/2+t/2;
 function ladder(g,x0,z0,x1,z1,ix,iz,rungs=RUNG){
   bx(g,P,PH,P,x0,PH/2,z0,MAT.frame);bx(g,P,PH,P,x1,PH/2,z1,MAT.frame);
