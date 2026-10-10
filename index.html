@@ -155,12 +155,13 @@
   .t-tall img{aspect-ratio:16/10}
   .t-half{flex-direction:column}.t-half img{width:100%;aspect-ratio:16/10}
   .colors{grid-template-columns:1fr}
-  .c-list{flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:6px;scroll-snap-type:x mandatory}
-  .c-list li{flex:none;scroll-snap-align:start}
+  .c-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
   .c-list .c-group{display:none}
-  .c-list button{grid-template-columns:32px auto;padding:8px 14px 8px 8px;border-color:var(--rule);background:var(--card)}
+  .c-list button{height:100%;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:9px 10px;border-color:var(--rule);background:var(--card)}
+  .c-list b{font-size:14px;line-height:1.35}
+  .c-list button[aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
   .c-list .d{display:none}
-  .duo{width:32px;height:32px}
+  .duo{width:28px;height:28px}
   .c-view{order:-1}
   .plan{grid-template-columns:1fr;gap:32px}
   .svc{grid-template-columns:1fr}
