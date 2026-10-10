@@ -119,5 +119,6 @@ h3{font-size:17px;margin:0;letter-spacing:-.02em}
 #toast.on{opacity:1}
 
 @media (max-width:900px){.layout2{grid-template-columns:1fr}.sticky{position:static}.sec{padding:60px 0}.f-in{grid-template-columns:1fr}.f-in .links{justify-content:flex-start}}
-@media (max-width:640px){.site-h{flex-wrap:wrap;padding:10px 16px;gap:6px}.site-h nav{gap:2px 16px;font-size:14px;width:100%;justify-content:space-between}.site-h nav .cart-link{padding:4px 11px}.brand small{font-size:13px}.wrap{padding:0 16px}.form-grid{grid-template-columns:1fr}.sec{padding:48px 0}.tbl .hide-m{display:none}.topbar{font-size:12px}}
+@media (max-width:640px){.site-h{flex-wrap:wrap;padding:10px 16px 0;gap:4px}.brand{font-size:18px;min-height:34px;align-items:center}.site-h nav{width:100%;flex-wrap:nowrap;gap:22px;font-size:14.5px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.site-h nav::-webkit-scrollbar{display:none}.site-h nav a{flex:none;padding:6px 0 9px}.site-h nav .cart-link{position:absolute;right:16px;top:10px;padding:5px 12px;font-size:14px}.brand small{font-size:13px}.wrap{padding:0 16px}.form-grid{grid-template-columns:1fr}.sec{padding:48px 0}.tbl .hide-m{display:none}.topbar{font-size:12px}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}html{scroll-behavior:auto}}
+@media (max-width:380px){.brand{font-size:17px}.brand small{font-size:12px;gap:6px}.site-h nav{gap:18px}}
