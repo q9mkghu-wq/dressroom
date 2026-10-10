@@ -6,12 +6,13 @@
 <title>배치 플래너 | 드레스룸 스토어</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&display=swap" rel="stylesheet">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
---paper:#ECEDEB;--sheet:#F8F8F6;--ink:#232529;--ink2:#5E6268;--rule:#CACCC9;--grid:#DEDFDC;--room:#FFFFFF;
+--paper:#F3EDE5;--sheet:#FBF8F3;--ink:#2F231B;--ink2:#6E6157;--rule:#DDD2C4;--grid:#ECE4D9;--room:#FFFFFF;
 --accent:#1F5FD1;--accent-soft:rgba(31,95,209,.10);--warn:#C8372D;--warn-soft:rgba(200,55,45,.12);
-font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif}
+font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#16171A;--sheet:#1F2125;--ink:#E7E8E6;--ink2:#A3A7AC;--rule:#3A3D43;--grid:#2A2D32;--room:#24272C;--accent:#79A3F2;--accent-soft:rgba(121,163,242,.14);--warn:#F0776C;--warn-soft:rgba(240,119,108,.16)}}
 :root[data-theme="dark"]{--paper:#16171A;--sheet:#1F2125;--ink:#E7E8E6;--ink2:#A3A7AC;--rule:#3A3D43;--grid:#2A2D32;--room:#24272C;--accent:#79A3F2;--accent-soft:rgba(121,163,242,.14);--warn:#F0776C;--warn-soft:rgba(240,119,108,.16)}
 *,*::before,*::after{box-sizing:inherit}
@@ -493,7 +494,7 @@ const itemsRoot=new THREE.Group();scene.add(itemsRoot);
 const meshes=new Map();let roomMesh=null,floorMesh=null;
 let dimGroup=null;
 function textSprite(txt,k){
-  const c=document.createElement('canvas'),x=c.getContext('2d'),f='600 44px "IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+  const c=document.createElement('canvas'),x=c.getContext('2d'),f='600 44px "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';
   x.font=f;const w=Math.ceil(x.measureText(txt).width)+40;c.width=w;c.height=72;
   x.font=f;x.fillStyle='rgba(255,255,255,0.92)';x.strokeStyle='#1F5FD1';x.lineWidth=3;
   const r=12;x.beginPath();x.moveTo(r,2);x.lineTo(w-r,2);x.quadraticCurveTo(w-2,2,w-2,r);x.lineTo(w-2,70-r);x.quadraticCurveTo(w-2,70,w-r,70);x.lineTo(r,70);x.quadraticCurveTo(2,70,2,70-r);x.lineTo(2,r);x.quadraticCurveTo(2,2,r,2);x.fill();x.stroke();

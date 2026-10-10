@@ -81,16 +81,19 @@
   function updateCount() { document.querySelectorAll('[data-cart-count]').forEach(el => { const n = cart.count(); el.textContent = n; el.hidden = n === 0; }); }
   function header(active) {
     const nav = [['index', '/', '홈'], ['sets', '/#sets', '추천 세트'], ['planner', '/planner', '배치 플래너'], ['order', '/order', '주문 조회']];
-    return `<header class="site-h"><a class="brand" href="/">${esc(SHOP.name || '드레스룸')}</a>
+    const top = SHOP.notice ? `<div class="topbar">${esc(SHOP.notice)}${SHOP.phone ? ` · 상담 <a href="tel:${esc(SHOP.phone.replace(/[^0-9]/g, ''))}"><b>${esc(SHOP.phone)}</b></a>` : ''}</div>` : '';
+    return `${top}<header class="site-h"><a class="brand" href="/">${esc(SHOP.name || '드레스룸')}${SHOP.brandSub ? `<small>${esc(SHOP.brandSub)}</small>` : ''}</a>
       <nav aria-label="주요 메뉴">${nav.map(([k, h, t]) => `<a href="${h}"${k === active ? ' aria-current="page"' : ''}>${t}</a>`).join('')}
       <a class="cart-link" href="/cart"${active === 'cart' ? ' aria-current="page"' : ''}>장바구니 <b data-cart-count hidden>0</b></a></nav></header>`;
   }
   function footer() {
     const v = x => (x ? esc(x) : '<em>입력 필요</em>');
     return `<footer class="site-f"><div class="f-in">
-      <div><b>${esc(SHOP.name || '')}</b><p>고객센터 ${v(SHOP.phone)} · ${esc(SHOP.hours || '')}${SHOP.kakaoChannelUrl ? ` · <a href="${esc(SHOP.kakaoChannelUrl)}" target="_blank" rel="noopener">카카오톡 상담</a>` : ''}</p></div>
+      <div><b>${esc(SHOP.name || '')}</b>
+        <p class="cs">${v(SHOP.phone)}</p>
+        <p>고객센터 · ${esc(SHOP.hours || '')}${SHOP.kakaoChannelUrl ? ` · <a href="${esc(SHOP.kakaoChannelUrl)}" target="_blank" rel="noopener">카카오톡 상담</a>` : ''}</p></div>
+      <p class="links"><a href="/policy#terms">이용약관</a><a href="/policy#privacy"><b style="font-size:inherit">개인정보처리방침</b></a><a href="/policy#refund">교환·환불 안내</a><a href="/order">주문 조회</a></p>
       <p class="biz">상호 ${v(SHOP.company)} | 대표 ${v(SHOP.ceo)} | 사업자등록번호 ${v(SHOP.bizNo)} | 통신판매업 신고 ${v(SHOP.mailOrderNo)}<br>주소 ${v(SHOP.address)} | 이메일 ${v(SHOP.email)} | 개인정보 보호책임자 ${v(SHOP.privacyOfficer)}</p>
-      <p class="links"><a href="/policy#terms">이용약관</a><a href="/policy#privacy"><b>개인정보처리방침</b></a><a href="/policy#refund">교환·환불 안내</a></p>
     </div></footer>`;
   }
   function mount(active) {
