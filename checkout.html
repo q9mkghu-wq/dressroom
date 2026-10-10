@@ -80,7 +80,7 @@
   let cfg = null;
   try { cfg = await (await fetch('/api/config')).json(); } catch (e) {}
   const note = document.getElementById('notice');
-  if (!cfg || !cfg.tossClientKey || !cfg.dbReady) note.innerHTML = '<p class="notice">결제 설정이 아직 끝나지 않아 주문할 수 없어요. 관리자는 Vercel 환경 변수(TOSS_CLIENT_KEY, TOSS_SECRET_KEY)와 Upstash Redis 연결을 확인해 주세요.</p>';
+  if (!cfg || !cfg.tossClientKey || !cfg.dbReady) note.innerHTML = '<p class="notice">결제 설정이 아직 끝나지 않아 주문할 수 없어요. 관리자는 Vercel 환경 변수(TOSS_CLIENT_KEY, TOSS_SECRET_KEY)와 Redis 저장소 연결을 확인해 주세요.</p>';
 
   document.getElementById('zipBtn').onclick = () => {
     if (!window.daum || !daum.Postcode) { document.getElementById('formErr').textContent = '주소 검색을 불러오지 못했어요. 주소를 직접 입력해 주세요.'; document.querySelector('[name=addr1]').readOnly = false; return; }

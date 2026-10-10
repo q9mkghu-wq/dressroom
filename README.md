@@ -1,7 +1,7 @@
 # 드레스룸 스토어 (배치 플래너 쇼핑몰)
 
 방 치수를 넣고 모듈을 배치한 뒤, 그 구성 그대로 장바구니에 담아 토스페이먼츠로 결제하는 쇼핑몰입니다.
-Vercel에 그대로 올리면 동작하며, 별도 빌드 과정이나 외부 패키지가 없습니다.
+Vercel에 그대로 올리면 동작합니다. 별도 빌드 과정은 없고, Redis 접속용 패키지(`redis`) 하나만 Vercel이 자동으로 설치해요.
 
 ## 페이지
 
@@ -21,8 +21,8 @@ Vercel에 그대로 올리면 동작하며, 별도 빌드 과정이나 외부 �
 
 1. **GitHub에 올리기**: 이 폴더 전체를 새 저장소로 올립니다. (`.env.example`, `.gitignore` 같은 숨김 파일도 함께)
 2. **Vercel 프로젝트 만들기**: Vercel에서 저장소를 Import 합니다. Framework Preset은 `Other`, 빌드 설정은 비워 둡니다.
-3. **저장소 연결**: Vercel 프로젝트 → Storage(또는 Marketplace) → **Upstash Redis** 추가 → 이 프로젝트에 연결합니다.
-   `KV_REST_API_URL`, `KV_REST_API_TOKEN` 환경 변수가 자동으로 들어갑니다. 주문과 단가·세트 설정이 여기에 저장돼요.
+3. **저장소 연결**: Vercel 프로젝트 → Storage → **Redis**(Redis Cloud) 또는 **Upstash Redis**를 만들어 이 프로젝트에 연결합니다.
+   `REDIS_URL` 또는 `KV_REST_API_URL`·`KV_REST_API_TOKEN` 중 하나가 자동으로 들어가면 돼요. 주문과 단가·세트 설정이 여기에 저장돼요.
 4. **환경 변수 추가**: Settings → Environment Variables
    - `TOSS_CLIENT_KEY`, `TOSS_SECRET_KEY`: 토스페이먼츠 개발자센터 → API 키 → **결제위젯 연동 키**
    - `ADMIN_PASSWORD`: 관리자 비밀번호 (8자 이상, 길고 추측하기 어렵게)
