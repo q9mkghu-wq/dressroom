@@ -784,11 +784,18 @@ load();
   if(S.items.length<n)setTimeout(()=>toast(`판매하지 않는 모듈 ${n-S.items.length}개를 저장된 배치에서 뺐어요`),600)})();
 const qs=new URLSearchParams(location.search);
 // 메인 화면 컬러에서 들어오면 그 색으로 맞춥니다 (?pillar=black&shelf=beige)
+const fromColor=!!(PILLAR[qs.get('pillar')]||SHELF[qs.get('shelf')]);
 if(PILLAR[qs.get('pillar')])S.pillar=qs.get('pillar');if(SHELF[qs.get('shelf')])S.shelf=qs.get('shelf');
 if(qs.get('layout')){const L=Shop.decodeLayout(qs.get('layout'));if(applyLayout(L)){sel=null;setTimeout(()=>toast('공유된 배치를 불러왔어요'),300)}}
 syncInputs();applyColors();buildRoom();resetCam();size3();refreshAll();
 Shop.updateCount();if(window.SHOP&&SHOP.name)$('brand').textContent=SHOP.name;
 renderCatalogImages();
+// 컬러에서 들어왔을 때: 방이 비어 있으면 예시 세트를 놓아 색이 바로 보이게 하고, 휴대폰에서는 3D 미리보기로 내려갑니다
+if(fromColor){
+  if(!S.items.length){const st=SETS.find(x=>x.k==='SET M')||SETS[0];if(st){placeSetObj(st);hist=[]}}
+  toast(`${PILLAR[S.pillar].name} & ${SHELF[S.shelf].name}로 맞췄어요. 모듈을 끌어서 내 방에 맞게 바꿔 보세요.`);
+  if(innerWidth<=1100)setTimeout(()=>$('three').closest('.pane').scrollIntoView({behavior:'smooth',block:'start'}),350);
+}
 (async function(){
   const st=await Shop.loadSettings();
   Object.assign(PRICE,st.prices);

@@ -81,7 +81,7 @@
   function updateCount() { document.querySelectorAll('[data-cart-count]').forEach(el => { const n = cart.count(); el.textContent = n; el.hidden = n === 0; }); }
   function header(active) {
     const nav = [['index', '/', '홈'], ['sets', '/#sets', '추천 세트'], ['planner', '/planner', '배치 플래너'], ['order', '/order', '주문 조회']];
-    const top = SHOP.notice ? `<div class="topbar">${esc(SHOP.notice)}${SHOP.phone ? ` · 상담 <a href="tel:${esc(SHOP.phone.replace(/[^0-9]/g, ''))}"><b>${esc(SHOP.phone)}</b></a>` : ''}</div>` : '';
+    const top = `<div class="topbar"><span></span><span>${SHOP.notice ? esc(SHOP.notice) : ''}${SHOP.phone ? `${SHOP.notice ? ' · ' : ''}상담 <a href="tel:${esc(SHOP.phone.replace(/[^0-9]/g, ''))}"><b>${esc(SHOP.phone)}</b></a>` : ''}</span><a class="admin-link" href="/admin">관리자</a></div>`;
     return `${top}<header class="site-h"><a class="brand" href="/">${esc(SHOP.name || '드레스룸')}${SHOP.brandSub ? `<small>${esc(SHOP.brandSub)}</small>` : ''}</a>
       <nav aria-label="주요 메뉴">${nav.map(([k, h, t]) => `<a href="${h}"${k === active ? ' aria-current="page"' : ''}>${t}</a>`).join('')}
       <a class="cart-link" href="/cart"${active === 'cart' ? ' aria-current="page"' : ''}>장바구니 <b data-cart-count hidden>0</b></a></nav></header>`;
