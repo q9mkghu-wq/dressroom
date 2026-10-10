@@ -28,7 +28,8 @@ img{display:block}
 .topbar a{text-decoration:none}
 .site-h{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px max(24px,calc((100% - 1200px)/2 + 24px));background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:saturate(1.2) blur(10px);-webkit-backdrop-filter:saturate(1.2) blur(10px);border-bottom:1px solid var(--rule)}
 .brand{display:flex;align-items:baseline;gap:8px;font-weight:700;font-size:19px;letter-spacing:-.03em;text-decoration:none;white-space:nowrap}
-.brand small{font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:500;font-size:14px;color:var(--ink3);letter-spacing:.02em}
+.brand small{display:inline-flex;align-items:center;gap:8px;font-weight:500;font-size:14px;color:var(--ink2);letter-spacing:-.01em}
+.brand small::before{content:"";width:1px;height:13px;background:var(--rule)}
 .site-h nav{display:flex;flex-wrap:wrap;gap:4px 26px;align-items:center;font-size:15px}
 .site-h nav a{text-decoration:none;color:var(--ink2);padding:4px 0;border-bottom:1.5px solid transparent}
 .site-h nav a:hover{color:var(--ink)}
@@ -118,5 +119,5 @@ h3{font-size:17px;margin:0;letter-spacing:-.02em}
 #toast.on{opacity:1}
 
 @media (max-width:900px){.layout2{grid-template-columns:1fr}.sticky{position:static}.sec{padding:60px 0}.f-in{grid-template-columns:1fr}.f-in .links{justify-content:flex-start}}
-@media (max-width:640px){.site-h{flex-wrap:wrap;padding:10px 16px;gap:6px}.site-h nav{gap:2px 16px;font-size:14px;width:100%;justify-content:space-between}.site-h nav .cart-link{padding:4px 11px}.brand small{display:none}.wrap{padding:0 16px}.form-grid{grid-template-columns:1fr}.sec{padding:48px 0}.tbl .hide-m{display:none}.topbar{font-size:12px}}
+@media (max-width:640px){.site-h{flex-wrap:wrap;padding:10px 16px;gap:6px}.site-h nav{gap:2px 16px;font-size:14px;width:100%;justify-content:space-between}.site-h nav .cart-link{padding:4px 11px}.brand small{font-size:13px}.wrap{padding:0 16px}.form-grid{grid-template-columns:1fr}.sec{padding:48px 0}.tbl .hide-m{display:none}.topbar{font-size:12px}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}html{scroll-behavior:auto}}
